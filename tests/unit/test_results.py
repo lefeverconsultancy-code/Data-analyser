@@ -111,7 +111,6 @@ def test_ci_descriptions():
 def test_round_trip_property(observed, p, alpha, reject, name, details):
     r = _test_result(name=name, observed=observed, p_value=p, alpha=alpha, reject=reject, details=details)
     back = result_from_json(r.to_json())
-    if math.isnan(observed):
-        assert math.isnan(back.observed)
-        back.observed = r.observed
-    assert back == r
+    # Compare the serialised form: NaN never equals NaN under dataclass equality (Python 3.13+)
+    assert back.to_dict() == r.to_dict()
+    assert math.isnan(back.observed) if math.isnan(observed) else back.observed == observed
