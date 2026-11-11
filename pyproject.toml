@@ -1,0 +1,44 @@
+[build-system]
+requires = ["hatchling>=1.21"]
+build-backend = "hatchling.build"
+
+[project]
+name = "data-analyser"
+version = "0.1.0"
+description = "Local tool for analysing logistics and financial data with probability, statistics, distribution fitting and hypothesis tests."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary" }
+authors = [{ name = "Luc" }]
+dependencies = [
+    "numpy>=1.26",
+    "pandas>=2.1",
+    "scipy>=1.11",
+    "matplotlib>=3.8",
+    "plotly>=5.18",
+    "streamlit>=1.50",
+    "openpyxl>=3.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "hypothesis>=6.90",
+    "pyyaml>=6.0",
+]
+
+[project.scripts]
+data-analyser = "analyser.__main__:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/analyser"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+markers = [
+    "slow: simulation checks with many runs (deselect with -m 'not slow')",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning:streamlit.*",
+]

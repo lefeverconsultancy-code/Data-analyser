@@ -1,0 +1,110 @@
+# Reference cases: worked examples with their published answers.
+#
+# Each case calls an engine function (module:attribute) with kwargs and checks the result.
+# Expectation keys:
+#   get     dotted path into the result (attributes, dict keys, list indexes)
+#   call    method to call on the result, with args
+#   value   published value, compared with abs tolerance tol
+#   exact   full-precision value (computed independently with scipy), tolerance exact_tol
+#   equals  exact equality (booleans, integers, strings)
+#   note    why a published value differs from the exact one (table rounding, erratum)
+# A case may also name a text file its 8-step report must match exactly (render).
+
+cases:
+  - id: plan-sec9-t-iq
+    title: One-sample t-test, IQ of technical students (8-step example, plan section 9)
+    source: Plan section 9 / Statistics for Engineers reader, IQ example with illustrative data
+    call: analyser.inference.one_sample:t_one_sample_summary
+    kwargs: {n: 16, mean: 118, sd: 9, mu0: 115, alternative: greater, alpha: 0.05,
+             about: the expected IQ of technical students}
+    expect:
+      - {get: observed, value: 1.333, tol: 0.0005, exact: 1.3333333333, exact_tol: 1.0e-9}
+      - {get: critical_values.upper, value: 1.753, tol: 0.0005, exact: 1.7530503557, exact_tol: 1.0e-8}
+      - {get: critical_values.xbar_upper, value: 118.94, tol: 0.005, exact: 118.9443633003, exact_tol: 1.0e-7}
+      - {get: p_value, value: 0.1012, tol: 0.00005, exact: 0.1011592917, exact_tol: 1.0e-8}
+      - {get: ci.lower, value: 114.06, tol: 0.005, exact: 114.0556366997, exact_tol: 1.0e-7}
+      - {get: effect_size.value, value: 0.33, tol: 0.005}
+      - {get: reject, equals: false}
+    render: section9_example.txt
+
+  - id: stats-4.1-z-iq-sigma-known
+    title: z-test with σ known, IQ of technical students
+    source: Statistics for Engineers reader 4.1-4.2, N(μ, 81), n = 9, x̄ = 119
+    call: analyser.inference.one_sample:z_one_sample_summary
+    kwargs: {n: 9, mean: 119, sigma: 9, mu0: 115, alternative: greater, alpha: 0.05,
+             about: the expected IQ of technical students}
+    expect:
+      - {get: critical_values.xbar_upper, value: 119.935, tol: 0.001, exact: 119.9345608809, exact_tol: 1.0e-7}
+      - {get: observed, exact: 1.3333333333, exact_tol: 1.0e-9}
+      - {get: p_value, value: 0.0918, tol: 0.001, exact: 0.0912112197, exact_tol: 1.0e-8,
+         note: "The reader rounds z to 1.33 for the table lookup; P(Z ≥ 1.33) = 0.0918, P(Z ≥ 1.3333) = 0.0912."}
+      - {get: reject, equals: false}
+
+  - id: workbook-normal-calculator
+    title: Normal calculator, X ~ N(80, 64)
+    source: Statistics & Probability workbook, normal calculator
+    call: analyser.distributions.continuous:Normal
+    kwargs: {mu: 80, sigma2: 64}
+    expect:
+      - {call: cdf, args: [70], value: 0.1056, tol: 0.0001, exact: 0.1056497737, exact_tol: 1.0e-9}
+      - {call: quantile, args: [0.95], value: 93.2, tol: 0.05, exact: 93.1588290156, exact_tol: 1.0e-7}
+      - {call: mean, equals: 80.0}
+      - {call: var, exact: 64.0, exact_tol: 1.0e-9}
+
+  - id: stats-6.1-chi2-families
+    title: χ² goodness of fit, family composition (expected counts as printed)
+    source: Statistics for Engineers reader, example 6.1.6, n = 1000 families
+    call: analyser.inference.categorical:chi2_gof
+    kwargs: {observed: [290, 219, 225, 266], expected: [260, 250, 250, 240],
+             categories: [boy-boy, boy-girl, girl-boy, girl-girl], alpha: 0.05}
+    expect:
+      - {get: observed, value: 12.62, tol: 0.005, exact: 12.6222051282, exact_tol: 1.0e-8}
+      - {get: critical_values.upper, value: 7.81, tol: 0.005, exact: 7.8147279033, exact_tol: 1.0e-8}
+      - {get: details.df, equals: 3}
+      - {get: reject, equals: true}
+
+  - id: stats-6.1-chi2-families-exact-probabilities
+    title: χ² goodness of fit, family composition (exact H0 probabilities)
+    source: Statistics for Engineers reader, example 6.1.6, with E₀N = 1000·p instead of rounded counts
+    call: analyser.inference.categorical:chi2_gof
+    kwargs: {observed: [290, 219, 225, 266], probs: [0.2601, 0.2499, 0.2499, 0.2401], alpha: 0.05}
+    expect:
+      - {get: observed, exact: 12.5328562798, exact_tol: 1.0e-8,
+         note: "The reader's 12.62 uses expected counts rounded to 260, 250, 250, 240; with 260.1, 249.9, 249.9, 240.1 the statistic is 12.53. Same decision."}
+      - {get: reject, equals: true}
+
+  - id: stats-7.5-wilcoxon-cities-towns
+    title: Wilcoxon rank-sum test, permit rates in cities vs towns
+    source: Statistics for Engineers reader, example 7.5.4 (α = 0.10, right-sided)
+    call: analyser.inference.nonparametric:wilcoxon_rank_sum
+    kwargs:
+      x: [500, 528, 560, 428, 397, 412, 519, 511]
+      y: [410, 458, 501, 450, 402, 457, 381, 540]
+      alternative: greater
+      alpha: 0.10
+      x_label: city
+      y_label: town
+      claim: cities use systematically higher permit rates than towns
+    expect:
+      - {get: observed, equals: 78.0}
+      - {get: details.mean_w, equals: 68.0}
+      - {get: details.var_w, value: 90.67, tol: 0.005}
+      - {get: p_value, value: 0.1587, tol: 0.001, exact: 0.1592125334, exact_tol: 1.0e-8,
+         note: "The reader rounds z = 0.9977 to 1.00 for the table lookup."}
+      - {get: reject, equals: false}
+
+  - id: stats-7.5-wilcoxon-tie-variance
+    title: Wilcoxon rank-sum, tie-corrected variance with one tie of two observations
+    source: Statistics for Engineers reader, note on ties after example 7.5.4
+    call: analyser.inference.nonparametric:wilcoxon_rank_sum
+    kwargs:
+      x: [500, 528, 560, 428, 397, 412, 519, 511]
+      y: [410, 458, 500, 450, 402, 457, 381, 540]
+      alternative: greater
+      alpha: 0.10
+      tie_correction: always
+    expect:
+      - {get: details.var_ties, exact: 90.5333333333, exact_tol: 1.0e-8,
+         note: "ERRATUM: the reader prints 90.71, but its own formula gives 8·8·(16³ − 22)/(12·16·15) = 90.53. Ties can only lower the variance below the no-ties 90.67."}
+      - {get: details.var_plain, exact: 90.6666666667, exact_tol: 1.0e-8}
+      - {get: observed, equals: 78.5}

@@ -1,0 +1,14 @@
+One-sample t-test on μ                                        α = 0.05
+1. Model       X₁,…,X₁₆ random sample from N(μ, σ²), σ unknown
+2. Hypotheses  H0: μ = 115   vs   H1: μ > 115
+3. Statistic   T = (X̄ − 115) / (S/√n)
+4. Under H0    T ~ t(15)
+5. Observed    t = 1.333
+6. a. Reject H0 if T ≥ 1.753  (equivalently x̄ ≥ 118.94)
+   b. p-value = P(T ≥ 1.333 | H0) = 0.1012
+7. Decision    Fail to reject H0: t is outside the rejection region, p > α
+8. Conclusion  At a 5% significance level, the data do not prove that
+               the expected IQ of technical students exceeds 115.
+CI   95% lower bound for μ: 114.06
+Effect size   d = (x̄ − μ₀)/s = 0.33
+Checks        normality: Shapiro–Wilk + Q-Q plot | n = 16 < 40, so t-test needs normality
